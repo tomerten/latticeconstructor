@@ -9,6 +9,7 @@ Welcome to latticeconstructor's documentation!
    readme
    installation
    api
+   tutorials
    authors
    history
 
