@@ -48,7 +48,7 @@ class LatticeBuilderLine:
         Parameters:
         -----------
         _def	: List[dict] | dict
-                list of dicts or dict containing element definitions
+                        list of dicts or dict containing element definitions
 
         """
         # roll back
@@ -76,8 +76,14 @@ class LatticeBuilderLine:
         if not self.table is None:
             self._update_table()
 
-    def add_element(self, element):
-        """Add elements to the end of the lattice"""
+    def add_element(self, element: str) -> None:
+        """Add element to the lattice at the end
+
+        Parameters:
+        -----------
+        element:	str
+                element name
+        """
         # roll back
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -94,7 +100,19 @@ class LatticeBuilderLine:
         self._update_table()
 
     def replace_element(self, old, new, **kwargs):
-        """Replace element by name or idx, give idx in kwargs to select by idx method."""
+        """Replace element by name or idx, give idx in kwargs to select by idx method.
+
+        Parameters:
+        -----------
+        old :   str
+            name of old element
+
+        new :   str
+            name of new element or a list of elements
+
+        idx :   int, optional
+            index of old element
+        """
         # roll back
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -115,8 +133,18 @@ class LatticeBuilderLine:
         # update table
         self._update_table()
 
-    def replace_list(self, start_idx, end_idx, new):
-        """Replace a series of elements in the lattice"""
+    def replace_list(self, start_idx: int, end_idx: int, new: Union[List[str], str]) -> None:
+        """Replace a series of elements in the lattice
+
+        Parameters:
+        -----------
+        start_idx : int
+            start index of series to remove
+        end_idx   : int
+            end index of series to remove
+        new       : List[str], str
+            replacement element or list of replacement elements
+        """
         # roll back
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -130,8 +158,16 @@ class LatticeBuilderLine:
         self.lattice = self.lattice[:start_idx] + new + self.lattice[end_idx + 1 :]
         self._update_table()
 
-    def insert_element_before(self, element, idx_next):
-        """Insert elements before a given element, by idx only."""
+    def insert_element_before(self, element: str, idx_next: int) -> None:
+        """Insert elements before a given element, by idx only.
+
+        Parameters:
+        -----------
+        element : str
+            name of the element to insert
+        idx_next: int
+            index of the element to insert before
+        """
         # roll back
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -145,8 +181,16 @@ class LatticeBuilderLine:
         self.lattice = self.lattice[:idx_next] + [element] + self.lattice[idx_next:]
         self._update_table()
 
-    def insert_element_after(self, element, idx_prev):
-        """Insert elements after a given element, by idx only."""
+    def insert_element_after(self, element: str, idx_prev: int) -> None:
+        """Insert elements after a given element, by idx only.
+
+        Parameters:
+        -----------
+        element : str
+            name of the element to insert
+        idx_next: int
+            index of the element to insert after
+        """
 
         # roll back
         self.history.put(
@@ -161,8 +205,14 @@ class LatticeBuilderLine:
         self.lattice = self.lattice[: idx_next + 1] + [element] + self.lattice[idx_next + 1 :]
         self._update_table()
 
-    def remove_element(self, elem_idx):
-        """Remove element by idx"""
+    def remove_element(self, elem_idx: int) -> None:
+        """Remove element by idx
+
+        Parameters:
+        -----------
+        elem_idx : int
+            index of element to remove
+        """
         # roll back
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -172,8 +222,17 @@ class LatticeBuilderLine:
         self.lattice = self.lattice[:elem_idx] + self.lattice[elem_idx + 1 :]
         self._update_table()
 
-    def remove_from_to(self, start_idx, end_idx):
-        """Remove series of elements between start_idx and end_idx (elements at these idxs are also removed!)"""
+    def remove_from_to(self, start_idx: int, end_idx: int) -> None:
+        """Remove series of elements between start_idx and end_idx
+        (elements at these idxs are also removed!)
+
+        Parameters:
+        -----------
+        start_idx : int
+            start index for removal
+        end_idx : int
+            end index for removal
+        """
         # roll back
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -183,8 +242,14 @@ class LatticeBuilderLine:
         self.lattice = self.lattice[:start_idx] + self.lattice[end_idx + 1 :]
         self._update_table()
 
-    def get_idx(self, elem):
-        """Get a list of idx corresponding to given element name"""
+    def get_idx(self, elem: str) -> List[int]:
+        """Get a list of idx corresponding to given element name
+
+        Parameters:
+        -----------
+        elem : str
+            element name to get indices for
+        """
         return [i for i, n in enumerate(self.lattice) if n == elem]
 
     def build_table(self):
@@ -213,15 +278,16 @@ class LatticeBuilderLine:
     # ------------------------------
     # more advanced methods
     # ------------------------------
-    def load_lattice_from_file(self, filename, ftype="lte"):
+    def load_lattice_from_file(self, filename: str, ftype: str = "lte") -> None:
         """
         Method to load lattice from a lattice file.
 
-        Arguments:
+        Parameters:
         -----------
         filename:    str
-            lattice filename
-        ftype   :    one of lte, madx-line, madx-seq
+                lattice filename
+        ftype   :    str
+                one of lte, madx-line, madx-seq
         """
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -257,15 +323,16 @@ class LatticeBuilderLine:
         else:
             self.lattice = [s.strip() for s in re.findall(r"(.*)\s*,\s*at", latstr)]
 
-    def load_definitions_from_file(self, filename, ftype="lte"):
+    def load_definitions_from_file(self, filename: str, ftype: str = "lte") -> None:
         """
         Method to load element defintions from lattice file.
 
-        Arguments:
+        Parameters:
         -----------
         filename:    str
-            lattice filename
-        ftype   :    one of lte, madx-line, madx-seq
+                lattice filename
+        ftype   :    str
+                one of lte, madx-line, madx-seq
         """
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
@@ -333,7 +400,15 @@ class LatticeBuilderLine:
             self.definitions = self._clean_def(_defs, settings)
 
     def _clean_def(self, re_defs, settings):
-        """Method to internally clean up the element definitions."""
+        """Method to internally clean up the element definitions.
+
+        Parameters:
+        -----------
+        re_defs:
+            list of tuples containing regex extracted defintions
+        settings:   dict
+            dictionary containing the regex extracted settings
+        """
         # generate element definitions to push into the builder class
         out = {}
         for el in re_defs:
