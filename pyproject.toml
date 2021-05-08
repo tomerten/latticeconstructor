@@ -13,10 +13,14 @@ homepage = "https://github.com/tomerten/latticeconstructor"
 keywords = ['packaging', 'poetry']
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
+pandas = "^1.2.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.4.2"
+black = "^21.5b0"
+isort = "^5.8.0"
+pylint = "^2.8.2"
 
 [tool.poetry.scripts]
 
