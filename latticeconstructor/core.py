@@ -9,9 +9,11 @@ A module containing the main lattice builder classes.
 """
 
 import queue
+
 # your imports here ...
 import re
 from copy import deepcopy
+from typing import List, Union
 
 import pandas as pd
 
@@ -40,8 +42,15 @@ class LatticeBuilderLine:
         # roll back queue
         self.history = queue.LifoQueue()
 
-    def add_def(self, _def):
-        """Add definitions dictionary to the definitions"""
+    def add_def(self, _def: Union[dict, List[dict]]) -> None:
+        """Add definitions dictionary to the definitions
+
+        Parameters:
+        -----------
+        _def	: List[dict] | dict
+                list of dicts or dict containing element definitions
+
+        """
         # roll back
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))

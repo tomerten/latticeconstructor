@@ -4,8 +4,8 @@ latticeconstructor
 
 
 
-<Enter a one-sentence description of this project here.>
-
+Package to build accelerator lattice files based on elements and their
+definitions.
 
 * Free software: MIT license
 * Documentation: https://latticeconstructor.readthedocs.io.
@@ -14,4 +14,4 @@ latticeconstructor
 Features
 --------
 
-* TODO
+* Construct line definition
