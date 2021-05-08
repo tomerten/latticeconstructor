@@ -175,10 +175,10 @@ class LatticeBuilderLine:
 
         # if single element given tranform into list to insert
         if not isinstance(element, list):
-            element = list(element)
+            element = [element]
 
         # insert and update table
-        self.lattice = self.lattice[:idx_next] + [element] + self.lattice[idx_next:]
+        self.lattice = self.lattice[:idx_next] + element + self.lattice[idx_next:]
         self._update_table()
 
     def insert_element_after(self, element: str, idx_prev: int) -> None:
@@ -199,10 +199,10 @@ class LatticeBuilderLine:
 
         # if single element given tranform into list to insert
         if not isinstance(element, list):
-            element = list(element)
+            element = [element]
 
         # insert and update table
-        self.lattice = self.lattice[: idx_next + 1] + [element] + self.lattice[idx_next + 1 :]
+        self.lattice = self.lattice[: idx_prev + 1] + element + self.lattice[idx_prev + 1 :]
         self._update_table()
 
     def remove_element(self, elem_idx: int) -> None:
@@ -254,14 +254,18 @@ class LatticeBuilderLine:
 
     def build_table(self):
         """Manually build table."""
+        # roll back
+        self.history.put(
+            (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
+        )
         self._update_table()
 
     def _update_table(self):
         """Callback called after any change to update table."""
         # roll back
-        self.history.put(
-            (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
-        )
+        # self.history.put(
+        #    (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
+        # )
 
         # only build/update table if all elements are defined
         # otherwise print error message and print list of missing defintions
@@ -299,7 +303,7 @@ class LatticeBuilderLine:
 
         if ftype != "madx-seq":
             # read line commands from filestr
-            structures = re.findall(r"([^,\s?]+):\s*LINE\s*=\s*\(([^)]+)\)", latstr)
+            structures = re.findall(r"([^,\s?]+)\s*:\s*LINE\s*=\s*\(([^)]+)\)", latstr)
 
             # init
             sublat_dict = {}
@@ -366,7 +370,7 @@ class LatticeBuilderLine:
                             else:
                                 yield float(child)
 
-                return _walker(entry)
+                    return _walker(entry)
 
                 for k in settings.keys():
                     settings[k] = flattenValues(k)

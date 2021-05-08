@@ -1,0 +1,7 @@
+
+QF : QUADRUPOLE, L := 0.50 , K1 :=  1.00;
+QD : QUADRUPOLE, L := 1.00 , K1 := -1.00;
+D1 : DRIFT, L := 1.00;
+D2 : DRIFT, L := 1.00;
+
+FODO: LINE = (QF,D1,QD,D2,QF);

@@ -3,7 +3,8 @@ Welcome to latticeconstructor's documentation!
 ###########################################################
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
+   :glob:
    :caption: Contents:
 
    readme
@@ -12,6 +13,7 @@ Welcome to latticeconstructor's documentation!
    tutorials
    authors
    history
+   notebooks/example_001.ipynb
 
 ##################
 Indices and tables

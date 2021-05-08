@@ -10,7 +10,7 @@ import pytest
 from latticeconstructor.core import LatticeBuilderLine
 
 
-def test_fodo():
+def tests_fodo():
     expected_dc = {
         "family": {
             0: "MARKER",
