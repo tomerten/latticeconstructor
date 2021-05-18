@@ -15,9 +15,6 @@ Package.
 Features
 --------
 
-#. Construct accelerator element table manually
-#. Edit accelerator element tables
-#. Load definitions and lattice from: 
-  #. Elegant
-  #. Madx sequence file 
-  #. Madx Line definition file 
+* Construct accelerator element table manually
+* Edit accelerator element tables
+* Load definitions and lattice from: Elegant, Madx sequence file, Madx Line definition file. 

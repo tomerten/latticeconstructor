@@ -17,6 +17,8 @@ from typing import List, Union
 
 import pandas as pd
 
+from .parse import parse_from_string
+
 
 class LatticeBuilderLine:
     """Class for building lattice tables"""
@@ -282,192 +284,37 @@ class LatticeBuilderLine:
     # ------------------------------
     # more advanced methods
     # ------------------------------
-    def load_lattice_from_file(self, filename: str, ftype: str = "lte") -> None:
-        """
-        Method to load lattice from a lattice file.
+    def load_from_file(self, filename: str, ftype: str = "lte") -> None:
+        """Method to load a lattice from file (uses latticejson).
 
-        Parameters:
-        -----------
-        filename:    str
-                lattice filename
-        ftype   :    str
-                one of lte, madx-line, madx-seq
+        Parameters
+        ----------
+        filename : str
+            filename
+        ftype : str, optional
+            format type ['lte'|'madx'], by default "lte"
         """
+        # save previous state to history
         self.history.put(
             (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
         )
-        assert ftype in ["lte", "madx-line", "madx-seq"]
 
+        # check if ftype is ok
+        assert ftype in ["lte", "madx"]
+
+        # read the string from file
         with open(filename, "r") as f:
             latstr = f.read()
 
-        if ftype != "madx-seq":
-            # read line commands from filestr
-            structures = re.findall(r"([^,\s?]+)\s*:\s*LINE\s*=\s*\(([^)]+)\)", latstr)
+        # use parser based on latticejson
+        name, defs, lat = parse_from_string(latstr, ftype=ftype)
 
-            # init
-            sublat_dict = {}
+        # update the instance
+        self.definitions = defs
+        self.lattice = lat
 
-            # add all line commands to dict
-            for latname, latline in structures:
-                sublat_dict[latname] = re.sub(r"\s+", "", latline).split(",")
-
-            def flatten(sublat_dict):
-                def _walker(k, lattices=sublat_dict):
-                    for child in lattices[k]:
-                        if child in lattices:
-                            yield from _walker(child)
-                        else:
-                            yield child
-
-                return _walker(list(sublat_dict.keys())[-1])
-
-            # load ordered list to lattice
-            self.lattice = list(flatten(sublat_dict))
-        else:
-            self.lattice = [s.strip() for s in re.findall(r"(.*)\s*,\s*at", latstr)]
-
-    def load_definitions_from_file(self, filename: str, ftype: str = "lte") -> None:
-        """
-        Method to load element defintions from lattice file.
-
-        Parameters:
-        -----------
-        filename:    str
-                lattice filename
-        ftype   :    str
-                one of lte, madx-line, madx-seq
-        """
-        self.history.put(
-            (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
-        )
-        assert ftype in ["lte", "madx-line", "madx-seq"]
-
-        with open(filename, "r") as f:
-            latstr = f.read()
-
-        if ftype != "madx-seq":
-            #             _defs = re.findall(r"(.*): ([^,\s]+)\s*[,\s*(.*)]+",latstr)
-            _defs = re.findall(r"(\w+)\s*:\s*(\w+)\s*[,;](.*)", latstr)
-            #             print(_defs)
-            if ftype == "lte":
-                settings = dict([(t[1], t[0]) for t in re.findall("%(.*) sto (.*)", latstr)])
-            else:
-                settings = dict(
-                    [
-                        (t[1], t[0])
-                        for t in re.findall(
-                            r"(?:CONST)?\s+(\w+[\.]\w+)\s*[:]*=\s*([+-]?[0-9]*[.]?[0-9]+);", latstr
-                        )
-                    ]
-                )
-
-                def flattenValues(entry):
-                    def _walker(k, settings=settings):
-                        for child in settings[k]:
-                            if child in settings:
-                                yield from _walker(child)
-                            else:
-                                yield float(child)
-
-                    return _walker(entry)
-
-                for k in settings.keys():
-                    settings[k] = flattenValues(k)
-
-            self.definitions = self._clean_def(_defs, settings)
-        else:
-            #             _defs = re.findall(r"(.*): ([^,\s]+)\s*[,\s*(.*)]+",latstr)
-            _defs = re.findall(r"(\w+)\s*:\s*(\w+)\s*[,;](.*)", latstr)
-            settings = dict(
-                [
-                    (t[1], t[0])
-                    for t in re.findall(
-                        r"(?:CONST)?\s+(\w+[\.]\w+)\s*[:]*=\s*([+-]?[0-9]*[.]?[0-9]+);", latstr
-                    )
-                ]
-            )
-
-            def flattenValues(entry):
-                def _walker(k, settings=settings):
-                    for child in settings[k]:
-                        if child in settings:
-                            yield from _walker(child)
-                        else:
-                            yield float(child)
-
-                return _walker(entry)
-
-            for k in settings.keys():
-                settings[k] = flattenValues(k)
-
-            self.definitions = self._clean_def(_defs, settings)
-
-    def _clean_def(self, re_defs, settings):
-        """Method to internally clean up the element definitions.
-
-        Parameters:
-        -----------
-        re_defs:
-            list of tuples containing regex extracted defintions
-        settings:   dict
-            dictionary containing the regex extracted settings
-        """
-        # generate element definitions to push into the builder class
-        out = {}
-        for el in re_defs:
-            row = {}
-
-            # element name
-            row["name"] = el[0]
-
-            # convert or keep if not in conversion list
-            row["family"] = self._CONVERSION_DICT.get(el[1], el[1])
-
-            # we skip the non relevant
-            if not row["family"] in self._CONVERSION_DICT.values():
-                continue
-
-            if row["family"] in ["MARKER", "MONITOR"]:
-                if not "BPM" in el[0].upper():
-                    row["family"] = "MARKER"
-                row["L"] = 0.0
-            else:
-                try:
-                    # add the arguments to the definition
-                    for arg in el[2].split(","):
-                        if arg[-1] == ";":
-                            arg = arg[:-1]
-                        k, v = arg.split("=")
-                        if k[-1] == ":":
-                            k = k[:-1]
-                        k = k.strip()  # remove surrounding whitespace
-                        v = v.strip()  # remove surrounding whitespace
-                        try:
-                            v = float(v)  # convert to float if possible
-                        except:
-                            try:
-                                v = float(
-                                    settings[v[1:-1]].strip()
-                                )  # if string of powersupply get the value from the settings
-                            except:
-                                # special cases
-                                if v.upper() == "TRUE":
-                                    v = True
-                                elif v.upper() == "FALSE":
-                                    v = False
-
-                        row[k.strip()] = v
-                except:
-                    # print failures and stop the conversion
-                    print(el)
-                    break
-
-            _key = el[0].strip()  # remove surrounding whitespace
-            row["name"] = _key
-            out[_key] = row
-
-        return out
+        if name is not None:
+            self.name = name
 
     def undo(self):
         """Undo previous change."""
@@ -476,3 +323,190 @@ class LatticeBuilderLine:
             self.definitions, self.lattice, self.table = old
         else:
             print("No previous states available")
+
+    # def load_lattice_from_file(self, filename: str, ftype: str = "lte") -> None:
+    #     """
+    #     Method to load lattice from a lattice file.
+
+    #     Parameters:
+    #     -----------
+    #     filename:    str
+    #             lattice filename
+    #     ftype   :    str
+    #             one of lte, madx-line, madx-seq
+    #     """
+    #     self.history.put(
+    #         (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
+    #     )
+    #     assert ftype in ["lte", "madx-line", "madx-seq"]
+
+    #     with open(filename, "r") as f:
+    #         latstr = f.read()
+
+    #     if ftype != "madx-seq":
+    #         # read line commands from filestr
+    #         structures = re.findall(r"([^,\s?]+)\s*:\s*LINE\s*=\s*\(([^)]+)\)", latstr)
+
+    #         # init
+    #         sublat_dict = {}
+
+    #         # add all line commands to dict
+    #         for latname, latline in structures:
+    #             sublat_dict[latname] = re.sub(r"\s+", "", latline).split(",")
+
+    #         def flatten(sublat_dict):
+    #             def _walker(k, lattices=sublat_dict):
+    #                 for child in lattices[k]:
+    #                     if child in lattices:
+    #                         yield from _walker(child)
+    #                     else:
+    #                         yield child
+
+    #             return _walker(list(sublat_dict.keys())[-1])
+
+    #         # load ordered list to lattice
+    #         self.lattice = list(flatten(sublat_dict))
+    #     else:
+    #         self.lattice = [s.strip() for s in re.findall(r"(.*)\s*,\s*at", latstr)]
+
+    # def load_definitions_from_file(self, filename: str, ftype: str = "lte") -> None:
+    #     """
+    #     Method to load element defintions from lattice file.
+
+    #     Parameters:
+    #     -----------
+    #     filename:    str
+    #             lattice filename
+    #     ftype   :    str
+    #             one of lte, madx-line, madx-seq
+    #     """
+    #     self.history.put(
+    #         (deepcopy(self.definitions), deepcopy(self.lattice), deepcopy(self.table))
+    #     )
+    #     assert ftype in ["lte", "madx-line", "madx-seq"]
+
+    #     with open(filename, "r") as f:
+    #         latstr = f.read()
+
+    #     if ftype != "madx-seq":
+    #         #             _defs = re.findall(r"(.*): ([^,\s]+)\s*[,\s*(.*)]+",latstr)
+    #         _defs = re.findall(r"(\w+)\s*:\s*(\w+)\s*[,;](.*)", latstr)
+    #         #             print(_defs)
+    #         if ftype == "lte":
+    #             settings = dict([(t[1], t[0]) for t in re.findall("%(.*) sto (.*)", latstr)])
+    #         else:
+    #             settings = dict(
+    #                 [
+    #                     (t[1], t[0])
+    #                     for t in re.findall(
+    #                         r"(?:CONST)?\s+(\w+[\.]\w+)\s*[:]*=\s*([+-]?[0-9]*[.]?[0-9]+);", latstr
+    #                     )
+    #                 ]
+    #             )
+
+    #             def flattenValues(entry):
+    #                 def _walker(k, settings=settings):
+    #                     for child in settings[k]:
+    #                         if child in settings:
+    #                             yield from _walker(child)
+    #                         else:
+    #                             yield float(child)
+
+    #                 return _walker(entry)
+
+    #             for k in settings.keys():
+    #                 settings[k] = flattenValues(k)
+
+    #         self.definitions = self._clean_def(_defs, settings)
+    #     else:
+    #         #             _defs = re.findall(r"(.*): ([^,\s]+)\s*[,\s*(.*)]+",latstr)
+    #         _defs = re.findall(r"(\w+)\s*:\s*(\w+)\s*[,;](.*)", latstr)
+    #         settings = dict(
+    #             [
+    #                 (t[1], t[0])
+    #                 for t in re.findall(
+    #                     r"(?:CONST)?\s+(\w+[\.]\w+)\s*[:]*=\s*([+-]?[0-9]*[.]?[0-9]+);", latstr
+    #                 )
+    #             ]
+    #         )
+
+    #         def flattenValues(entry):
+    #             def _walker(k, settings=settings):
+    #                 for child in settings[k]:
+    #                     if child in settings:
+    #                         yield from _walker(child)
+    #                     else:
+    #                         yield float(child)
+
+    #             return _walker(entry)
+
+    #         for k in settings.keys():
+    #             settings[k] = flattenValues(k)
+
+    #         self.definitions = self._clean_def(_defs, settings)
+
+    # def _clean_def(self, re_defs, settings):
+    #     """Method to internally clean up the element definitions.
+
+    #     Parameters:
+    #     -----------
+    #     re_defs:
+    #         list of tuples containing regex extracted defintions
+    #     settings:   dict
+    #         dictionary containing the regex extracted settings
+    #     """
+    #     # generate element definitions to push into the builder class
+    #     out = {}
+    #     for el in re_defs:
+    #         row = {}
+
+    #         # element name
+    #         row["name"] = el[0]
+
+    #         # convert or keep if not in conversion list
+    #         row["family"] = self._CONVERSION_DICT.get(el[1], el[1])
+
+    #         # we skip the non relevant
+    #         if not row["family"] in self._CONVERSION_DICT.values():
+    #             continue
+
+    #         if row["family"] in ["MARKER", "MONITOR"]:
+    #             if not "BPM" in el[0].upper():
+    #                 row["family"] = "MARKER"
+    #             row["L"] = 0.0
+    #         else:
+    #             try:
+    #                 # add the arguments to the definition
+    #                 for arg in el[2].split(","):
+    #                     if arg[-1] == ";":
+    #                         arg = arg[:-1]
+    #                     k, v = arg.split("=")
+    #                     if k[-1] == ":":
+    #                         k = k[:-1]
+    #                     k = k.strip()  # remove surrounding whitespace
+    #                     v = v.strip()  # remove surrounding whitespace
+    #                     try:
+    #                         v = float(v)  # convert to float if possible
+    #                     except:
+    #                         try:
+    #                             v = float(
+    #                                 settings[v[1:-1]].strip()
+    #                             )  # if string of powersupply get the value from the settings
+    #                         except:
+    #                             # special cases
+    #                             if v.upper() == "TRUE":
+    #                                 v = True
+    #                             elif v.upper() == "FALSE":
+    #                                 v = False
+
+    #                     row[k.strip()] = v
+    #             except:
+    #                 # print failures and stop the conversion
+    #                 print(el)
+    #                 break
+
+    #         _key = el[0].strip()  # remove surrounding whitespace
+    #         row["name"] = _key
+    #         out[_key] = row
+
+    #     return out

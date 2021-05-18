@@ -8,3 +8,7 @@ API
 .. automodule:: latticeconstructor.core
    :members:
 
+
+.. automodule:: latticeconstructor.parse
+   :members:
+

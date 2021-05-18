@@ -20,6 +20,7 @@ ipython = "^7.23.1"
 nbsphinx = "^0.8.4"
 ipykernel = "^5.5.4"
 pandoc = "^1.0.2"
+LatticeJSON = "^0.1.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.4.2"
