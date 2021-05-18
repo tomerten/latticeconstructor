@@ -18,3 +18,8 @@ Features
 * Construct accelerator element table manually
 * Edit accelerator element tables
 * Load definitions and lattice from: Elegant, Madx sequence file, Madx Line definition file. 
+
+Non-standard Dependency
+-----------------------
+
+* `latticejson <https://github.com/nobeam/latticejson>`_

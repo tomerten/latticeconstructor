@@ -10,7 +10,6 @@ Welcome to latticeconstructor's documentation!
    readme
    installation
    api
-   tutorials
    authors
    history
    notebooks/example_001.ipynb
