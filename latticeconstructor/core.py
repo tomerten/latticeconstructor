@@ -40,6 +40,7 @@ class LatticeBuilderLine:
         self.lattice = []
         self.definitions = {}
         self.table = None
+        self.positions = None
 
         # roll back queue
         self.history = queue.LifoQueue()
@@ -272,10 +273,13 @@ class LatticeBuilderLine:
         # only build/update table if all elements are defined
         # otherwise print error message and print list of missing defintions
         if all([k in self.definitions.keys() for k in self.lattice]):
-            temp = [self.definitions[k] for k in self.lattice]
+            temp = [{**self.definitions[k], **{"name": k}} for k in self.lattice]
             ntable = pd.DataFrame(temp)
-            if not "pos" in ntable.columns:
-                ntable["pos"] = ntable["L"].cumsum() - ntable["L"] / 2
+            if self.positions is not None:
+                ntable["at"] = self.positions["at"]
+                # ntable = pd.merge(ntable, self.positions, how="outer", on="name")
+            else:
+                ntable["at"] = ntable["L"].cumsum() - ntable["L"] / 2
             self.table = ntable
         else:
             print("Table not updated - not all elements defined.")
@@ -307,11 +311,12 @@ class LatticeBuilderLine:
             latstr = f.read()
 
         # use parser based on latticejson
-        name, defs, lat = parse_from_string(latstr, ftype=ftype)
+        name, pos, defs, lat = parse_from_string(latstr, ftype=ftype)
 
         # update the instance
         self.definitions = defs
         self.lattice = lat
+        self.positions = pos
 
         if name is not None:
             self.name = name
