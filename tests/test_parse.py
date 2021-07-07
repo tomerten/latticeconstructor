@@ -3,14 +3,12 @@
 
 """Tests for `latticeconstructor` package."""
 
+import latticeconstructor.parse
 import pytest
 
-import latticeconstructor.parse
 
 def test_greet():
-    expected = "Hello John!"
-    greeting = latticeconstructor.parse.greet("John")
-    assert greeting==expected
+    pass
 
 
 # ==============================================================================

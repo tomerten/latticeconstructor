@@ -26,7 +26,7 @@ def tests_fodo():
         "name": {0: "W1", 1: "QF", 2: "D", 3: "QD", 4: "D", 5: "QF"},
         "K1": {0: np.nan, 1: 0.49, 2: np.nan, 3: -0.4999, 4: np.nan, 5: 0.49},
         "N_KICKS": {0: np.nan, 1: 16.0, 2: np.nan, 3: 16.0, 4: np.nan, 5: 16.0},
-        "pos": {0: 0.0, 1: 0.171, 2: 2.13225, 3: 4.2565, 4: 6.380749999999999, 5: 8.342},
+        "at": {0: 0.0, 1: 0.171, 2: 2.13225, 3: 4.2565, 4: 6.380749999999999, 5: 8.342},
     }
 
     expected = pd.DataFrame.from_dict(expected_dc)
@@ -41,6 +41,10 @@ def tests_fodo():
         }
     )
     lblfodo.add_element(["W1", "QF", "D", "QD", "D", "QF"])
+    print("actual")
+    print(lblfodo.table)
+    print("expected")
+    print(expected)
     assert lblfodo.table.equals(expected)
 
 

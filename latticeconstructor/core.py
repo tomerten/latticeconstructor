@@ -280,6 +280,11 @@ class LatticeBuilderLine:
                 # ntable = pd.merge(ntable, self.positions, how="outer", on="name")
             else:
                 ntable["at"] = ntable["L"].cumsum() - ntable["L"] / 2
+
+            if ntable["L"].isnull().values.any():
+                ntable.loc[ntable["L"].isnull(), "L"] = 0.0
+                ntable["at"] = ntable["L"].cumsum() - ntable["L"] / 2
+
             self.table = ntable
         else:
             print("Table not updated - not all elements defined.")
