@@ -48,6 +48,7 @@ _CONVERSION_DICT = {
     "KQUAD": "QUADRUPOLE",
     "KSEXT": "SEXTUPOLE",
     "DRIF": "DRIFT",
+    "EDRIFT": "DRIFT",
     "RFCA": "RFCAVITY",
     "CSBEND": "SBEND",
     "MONI": "MONITOR",
