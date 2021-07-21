@@ -9,7 +9,6 @@ A module containing the main lattice builder classes.
 """
 
 import queue
-
 # your imports here ...
 import re
 from copy import deepcopy
@@ -279,10 +278,9 @@ class LatticeBuilderLine:
                 ntable["at"] = self.positions["at"]
                 # ntable = pd.merge(ntable, self.positions, how="outer", on="name")
             else:
-                ntable["at"] = ntable["L"].cumsum() - ntable["L"] / 2
+                if ntable["L"].isnull().values.any():
+                    ntable.loc[ntable["L"].isnull(), "L"] = 0.0
 
-            if ntable["L"].isnull().values.any():
-                ntable.loc[ntable["L"].isnull(), "L"] = 0.0
                 ntable["at"] = ntable["L"].cumsum() - ntable["L"] / 2
 
             self.table = ntable
