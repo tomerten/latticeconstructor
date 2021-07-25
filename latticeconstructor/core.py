@@ -9,6 +9,7 @@ A module containing the main lattice builder classes.
 """
 
 import queue
+
 # your imports here ...
 import re
 from copy import deepcopy
@@ -275,7 +276,7 @@ class LatticeBuilderLine:
             temp = [{**self.definitions[k], **{"name": k}} for k in self.lattice]
             ntable = pd.DataFrame(temp)
             if self.positions is not None:
-                ntable["at"] = self.positions["at"]
+                ntable["at"] = self.positions["at"].values
                 # ntable = pd.merge(ntable, self.positions, how="outer", on="name")
             else:
                 if ntable["L"].isnull().values.any():
